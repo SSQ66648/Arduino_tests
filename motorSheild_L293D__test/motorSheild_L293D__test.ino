@@ -38,6 +38,7 @@
     + Find limits of library functions (ie. max speed parameters etc)
   v2.1
     + Rewrite step tests to own methods (type passed as argument)
+    + Add servo tests when purchased
   ----------------------------------------------------------------------------*/
 
 //Header files------------------------------------------------------------------
@@ -49,7 +50,7 @@
 //Member Variables--------------------------------------------------------------
 //DC motor 1
 AF_DCMotor dcMotor(1);
-//stepper motor
+//stepper motor (number of steps in 360 rotation (aka 7.5 degree steps), sheild port no (M3&M4))
 AF_Stepper stepMotor(48, 2);
 
 //spin up/down speed counter
@@ -124,6 +125,8 @@ void loop() {
   stepMotor.step(48, BACKWARD, MICROSTEP);
   delay(2000);
 
+  Serial.println("releasing step motor");
+  stepMotor.release();
 
   //STOP PROGRAM--------------------------
   Serial.println("end loop: press reset button to repeat cycle.");
