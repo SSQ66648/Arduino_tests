@@ -2,7 +2,7 @@
   PROJECT:      Module tests
   FILE:         pwmDriver_PCA9685_test.ino
   AUTHOR:       SSQ66648
-  VERSION:      v3.0
+  VERSION:      v3.1
   DESCRIPTION:  Testing and experimentation of Arduino pulse-width modulation board: PCA9685
   ------------------------------------------------------------------------------
   NOTES:
@@ -10,6 +10,7 @@
     + Board tested with TowerPro Micro 9g servo SG90 (*1 then *10)
     + test of using on-board power supply only has been dropped due to potential of brown-outs or overheating issue
     + serial input of (1) to proceed is a plcaceholder and will be replaced with a physical button to proceed.
+    + testing moved to Nano clone (requires old Bootloader for chip)
   TESTING RESULTS:
     v1.0:
       Scanning from 0-180 or back incrementally has resulted in non-full rotation in two tested servos.
@@ -31,7 +32,12 @@
         - assumed to be related to low quality of hardware construction rather than code issues.
       Development of current version has been noted to occasionally require power reset before physical movement begins
         - not asssumed to be physical jamming as this would not prevent the next servo activating.
+    v3.1:
+      Slight twitch in attempt to return to zero when using setAngle()
+        -correct by using method to get current position (pulse width) as starting point?
   TODO:
+    + method of obtaining servo's current position (pulse length)?
+    + test working code from Nano on Uno board for compatability issues
     + add button press between actions
     + write methods / define fixed angles to rotate to
     + obtain and test with LEDs
@@ -100,9 +106,9 @@ void loop() {
     for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
       pwm.setPWM(servonum, 0, pulselen);
     }
-    delay(500);
+    delay(200);
   }
-  delay(2000);
+  delay(1000);
 
   //set servos #0-9 to MIN position
   for (uint16_t servonum = 0; servonum < 10; servonum++) {
@@ -111,14 +117,49 @@ void loop() {
     for (uint16_t pulselen = SERVOMAX; pulselen > SERVOMIN; pulselen--) {
       pwm.setPWM(servonum, 0, pulselen);
     }
-    delay(500);
+    delay(200);
   }
-  delay(2000);
+  delay(1000);
 
+  //(temp button placeholder for) pause execution
+  int input = 0;
+  Serial.println("enter 1 to proceed to manual testing");
+  while (input != 1) {
+    input = Serial.parseInt();
+  }
 
+  //test manual methods
+  loopSetTen();
 
 }
 
 
 
+
+
 //Functions---------------------------------------------------------------------
+void setAngle(int servoNo, int angle) {
+  //set servo number x to angle y
+  Serial.print("angle: ");
+  Serial.println(angle);
+  for (uint16_t pulselen = 0; pulselen < angle; pulselen++) {
+    pwm.setPWM(servoNo, 0, pulselen);
+  }
+}
+
+//perform setAngle 0-90-180-0 on all ten servos sequentially
+//half second delay to not interfere with previous movement test
+void loopSetTen() {
+  for (uint8_t servoNum = 0; servoNum < 10; servoNum++) {
+    Serial.print("Setting servo ");
+    Serial.println(servoNum);
+    setAngle(servoNum, degree0);
+    delay(500);
+    setAngle(servoNum, degree90);
+    delay(500);
+    setAngle(servoNum, degree180);
+    delay(500);
+    setAngle(servoNum, degree0);
+    delay(500);
+  }
+}
