@@ -2,7 +2,7 @@
   PROJECT:      Module tests
   FILE:         pwmDriver_PCA9685_test.ino
   AUTHOR:       SSQ66648
-  VERSION:      v1.0
+  VERSION:      v3.0
   DESCRIPTION:  Testing and experimentation of Arduino pulse-width modulation board: PCA9685
   ------------------------------------------------------------------------------
   NOTES:
@@ -12,52 +12,80 @@
     + serial input of (1) to proceed is a plcaceholder and will be replaced with a physical button to proceed.
   TESTING RESULTS:
     v1.0:
-      scanning from 0-180 or back incrementally has resulted in non-full rotation in two tested servos.
+      Scanning from 0-180 or back incrementally has resulted in non-full rotation in two tested servos.
+      Setting to angle value results in snapping to correct angle despuite scanning issues.
+    v2.0:
+      Written off due to multiple issues presumed to be caused by library incompatibilities. (multiple implementations attempted with different libraries)
+    v3.0:
+      Currently cannot quickly "snap-to-angle" as could previously when controlled directly from Arduino.
+        - no librbary method allows for this behaviour when using the PWM board.
+        - requires "scanning" movement for-loop to work
+        - attempts at removing the loop and recreating the "snap-to-start-angle" behaviour seen at the start of the loop have been unsucessful.
+      SERVOMIN and SERVOMAX values obtained for SG90 servos through trial and error.
+        - no difference between 105 and 100 for minimum angle, or 490 and 500 for max angle
+        - decided against rounding the numbers as this may introduce uneeded stress on the (nylon) gearing
+      Based off same example code as one of the (completely unresponsive) 2.0 iterations, but works fine.
+      Has been implemented on the Nano rather than the Uno (board choice possibly related to 2.0 issues?)
+      All ten servos are responive to test code.
+      Servo #4 is noticeably slower than others (others slightly slower) and not all complete a full 180 (appx ~170)
+        - assumed to be related to low quality of hardware construction rather than code issues.
+      Development of current version has been noted to occasionally require power reset before physical movement begins
+        - not asssumed to be physical jamming as this would not prevent the next servo activating.
   TODO:
     + add button press between actions
-    + test single servo
-    + add use of PWM board with one servo
-    + test all 10 servos simultaniously
+    + write methods / define fixed angles to rotate to
     + obtain and test with LEDs
     + recreate test program in python and port to Raspberry Pi
-    + return to ServoEasing.h library (or similar) to fine-tune movement
+    + return to ServoEasing.h library (or similar) for fine-tuned movements
     + chain drivers to support multiple boards when obtained
   (lesser) TODO:
     + remove duplicate '.ino' from filename of setup serial output
     + reduce full path to just filename in setup identification
+    + add debugging enabled/disabled outputs (ie using <0 in for-loop)
   ----------------------------------------------------------------------------*/
 
 //Header files------------------------------------------------------------------
-//#include "ServoEasing.h"    //consider changing to this library
-#include <Servo.h>
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+//consider changing to this library:
+//#include "ServoEasing.h"
 
 
 //Definitions-------------------------------------------------------------------
+//trial-and-error found values found for specific servos used (before hitting hard stop limits)
+#define SERVOMIN  105 // This is the 'minimum' pulse length count (out of 4096)
+#define SERVOMAX  490 // This is the 'maximum' pulse length count (out of 4096)
+//unused demo values copied here for future reference
+#define USMIN  600 // This is the rounded 'minimum' microsecond length based on the minimum pulse of 150
+#define USMAX  2400 // This is the rounded 'maximum' microsecond length based on the maximum pulse of 600
+//analog servo frequency (attempts at adjusting this have resulted in unresponsive servos, even after correcting back to 50)
+#define SERVO_FREQ 50 // Analog servos run at ~50 Hz updates
+
+//"shortcut" angle values (in degrees 0-180)
+#define degree0 105
+#define degree90 297  //rounded value (half-way between min & max  values)
+#define degree180 490
 
 
 //Member Variables--------------------------------------------------------------
-Servo servo0;
-//starting angle
-int angle = 0;
-//counter to iterate through available servos (unused)
-uint8_t servonum = 0;
-//(poor) user-control of program progression via serial input (to be replaced with physical button asap)
-int input = 0;
+//uses default address (0x40) - other options available -see lib docs
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 
 //Setup-------------------------------------------------------------------------
 void setup() {
   //feedback LED
   pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
 
   Serial.begin(9600);
   //Specify which program is currently running on Arduino
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
 
-  //assign servo
-  servo0.attach(8);
-  Serial.println ("Servos set to zero");
-  servo0.write(angle);
+  //values taken from lib example and seem to work (requires oscilloscope to find exact values for specific chip used)
+  pwm.setOscillatorFrequency(27000000);
+  pwm.setPWMFreq(SERVO_FREQ);
+  delay(10);
 
   Serial.println("Setup complete");
 }
@@ -65,55 +93,28 @@ void setup() {
 
 //Loop--------------------------------------------------------------------------
 void loop() {
-  //scan input control-----------
-  //scanning servos: test actually turns full 180 (<180 found every time)
-  Serial.println ("enter 1 to set servos to 180");
-  while (input != 1) {
-    input = Serial.parseInt();
+  //set servos #0-9 to MAX position
+  for (uint16_t servonum = 0; servonum < 10; servonum++) {
+    Serial.print("MAX position: Servo ");
+    Serial.println(servonum);
+    for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
+      pwm.setPWM(servonum, 0, pulselen);
+    }
+    delay(500);
   }
-  input = 0;
-  // scan from 0 to 180 degrees
-  for (angle = 0; angle <= 190; angle++)
-  {
-    Serial.println(angle);
-    servo0.write(angle);
-    delay(50);
-  }
+  delay(2000);
 
-  //test angle actually returns to zero from full 180
-  Serial.println ("enter 1 to set servo to 0");
-  while (input != 1) {
-    input = Serial.parseInt();
+  //set servos #0-9 to MIN position
+  for (uint16_t servonum = 0; servonum < 10; servonum++) {
+    Serial.print("MIN position: Servo ");
+    Serial.println(servonum);
+    for (uint16_t pulselen = SERVOMAX; pulselen > SERVOMIN; pulselen--) {
+      pwm.setPWM(servonum, 0, pulselen);
+    }
+    delay(500);
   }
-  input = 0;
-  for (angle = 180; angle > 0; angle--)
-  {
-    Serial.println(angle);
-    servo0.write(angle);
-    delay(5);
-  }
+  delay(2000);
 
-  //manual input control----------
-  Serial.println ("enter 1 to set servo to manual 180");
-  while (input != 1) {
-    input = Serial.parseInt();
-  }
-  input = 0;
-  servo0.write(180);
-
-  Serial.println ("enter 1 to set servo to manual 90");
-  while (input != 1) {
-    input = Serial.parseInt();
-  }
-  input = 0;
-  servo0.write(90);
-
-  Serial.println ("enter 1 to set servo to manual 0");
-  while (input != 1) {
-    input = Serial.parseInt();
-  }
-  input = 0;
-  servo0.write(0);
 
 
 }
