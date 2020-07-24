@@ -12,13 +12,13 @@
     v1.0:
       adjustment of contrast screw must be first troubleshooting step on first connection.
       rightToLeft() produces mirror-writing.
-      setCursor() controls direction of auto-scrolling (ie 0,0 right-to-left and 16,1 left-to-right).
+      setCursor() controls direction of auto-scrolling (ie 0,0 right-to-left and anything else(?) left-to-right).
         -above is observed in exeriments with own newText() method. NOT during scrolling-string-test-text (right-to-left as normal).
       scrolling text is capable of exacly 40 characters per line.
       scrolling strings longer than 40char will position on next line exactly (ie char 40 directly below char 0)
       minimum loop delay for text rendering is found to be ~500ms. any lower and text becomes blurry.
       scrolling strings >80 characters will display overwriting prvious text (ie test string I-9+ replaces A-9+)
-        -Original text (A-9) is displayed correctly first, before being replaced by scrolling characters 80+ (does not "loop", only overwrites).
+        -Original text (A-9) is not displayed correctly before being replaced by scrolling characters 80+ (does not "loop", only overwrites).
       scrolling requires active printing ("set characters" comment) otherwise no scolling occurrs.
       scrolling test string is missing character (overwritten by cursor position printing empty character to drive loop)
         -however this is NOT the same behaviour as scrolling strings: as cursor character is written each loop, original character is NOT displayed before overwrite.
@@ -77,7 +77,7 @@ void setup() {
   Serial.println();
 
   //delay to see first character before scrolling
-  delay(1000);
+  delay(2000);
 }
 
 
@@ -98,7 +98,7 @@ void loop() {
   //  delay(2000);
 
 
-  lcd.setCursor(100, 0);
+  lcd.setCursor(70, 0);
   lcd.print(" ");      // set characters
   delay(500);
 

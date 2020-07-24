@@ -1,0 +1,73 @@
+finding lcd cursor overwrite behaviour logic?
+
+
+
+Char no | 00| 01| 02| 03| 04| 05| 06| 07| 08| 09| 10| 11| 12| 13| 14| 15| 16| 17| 18| 19| 20| 21| 22| 23| 24| 25| 26| 27| 28| 29| 30| 31| 32| 33| 34| 35| 36| 37| 38| 39|
+        | 40| 41| 42| 43| 44| 45| 46| 47| 48| 49| 50| 51| 52| 53| 54| 55| 56| 57| 58| 59| 60| 61| 62| 63| 64| 65| 66| 67| 68| 69| 70| 71| 72| 73| 74| 75| 76| 77| 78| 79|
+        | 80| 81|
+
+line 0  | A | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | B | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | C | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | D | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+line 1  | E | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | F | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | G | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | H | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+line 0  | I | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+
+results:
+param   | expect    | match | actual    | notes
+-----------------------------------------------
+ 00,0   | 00,0 (A)  | Y     |
+ 20,0   | 20,0 (C)  | Y     |
+ 40,0   | 00,1 (E)  | Y     |
+ 60,0   | 20,1 (G)  | N     | 00,1 (E)  | E is seen before scolling starts
+ 80,0   | 00,0 (A)  | N     | 56,1 (F6) |
+100,0   | 20,0 (C)  | N     | 76,0 (H6) | I overwrites A before any scrolling
+
+
+param   | expect    | match | actual    | notes
+-----------------------------------------------
+ 00,1   | 00,1 (E)  | Y
+ 20,1   | 20,1 (G)  | Y
+ 40,1   | 00,0 (A)  | Y
+ 60,1   | 20,0 (C)  | N     | 00,0 (A)  |
+ 80,1   | 00,1 (E)  | N     | 16,0 (B6) |
+100,1   | 20,1 (G)  | N     | 36,0 (D6) |
+
+
+incemental results (chars 40-60):
+param   | expect    | match | actual    | notes
+-----------------------------------------------
+ 40,0   | 00,1 (E0) | Y     |
+ 41,0   | 01,1 (E1) | N     | E0
+ 42,0   | 02,1 (E2) | N     | E0
+ 43,0   | 03,1 (E3) | N     | E0
+ 44,0   | 04,1 (E4) | N     | E0
+ 45,0   | 05,1 (E5) | N     | E0
+ 46,0   | 06,1 (E6) | N     | E0
+ 47,0   | 07,1 (E7) | N     | E0
+ 48,0   | 08,1 (E8) | N     | <NONE>     | no empty character observed
+ 49,0   | 09,1 (E9) | N     | <NONE>     | no empty character observed
+ 50,0   | 10,1 (F0) | N     | <NONE>     | no empty character observed
+ 51,0   | 11,1 (F1) | N     | <NONE>     | no empty character observed
+ 52,0   | 12,1 (F2) | N     | <NONE>     | no empty character observed
+ 53,0   | 13,1 (F3) | N     | <NONE>     | no empty character observed
+ 54,0   | 14,1 (F4) | N     | <NONE>     | no empty character observed
+ 55,0   | 15,1 (F5) | N     | <NONE>     | no empty character observed
+ 56,0   | 16,1 (F6) | N     | E0
+ 57,0   | 17,1 (F7) | N     | E0
+ 58,0   | 18,1 (F8) | N     | E0
+ 59,0   | 19,1 (F9) | N     | E0
+ 60,0   | 20,1 (G0) | N     | E0
+ 61,0   | 21,1 (G1) | N     | E0
+ 62,0   | 22,1 (G2) | N     | E0
+ 63,0   | 23,1 (G3) | N     | E0
+ 64,0   | 24,1 (G4) | N     | E0
+ 65,0   | 25,1 (G5) | N     | E1
+ 66,0   | 26,1 (G6) | N     | E2
+ 67,0   | 27,1 (G7) | N     | E3
+ 68,0   | 28,1 (G8) | N     | E4
+ 69,0   | 29,1 (G9) | N     | E5
+ 70,0   | 30,1 (H0) | N     | E6
+
+
+----------------------------------------
+notes
+----------------------------------------
++   could this have something to do with initialising lcd with lcd.begin(16,1) ?
