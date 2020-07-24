@@ -2,7 +2,7 @@
   PROJECT:      Module tests
   FILE:         lcd_1602A_test.ino
   AUTHOR:       SSQ66648
-  VERSION:      v1.0
+  VERSION:      v1.1
   DESCRIPTION:  Testing and experimentation of Arduino LCD module: 1602A
   ------------------------------------------------------------------------------
   NOTES:
@@ -27,12 +27,17 @@
           unexpected behaviour found: character 80 line 0 should loop back to character 0 line 0 (if 40,0 is equal to 0,1)
             BUT actually overwrites character 56 line 0? (ie F-6).
             (see file cursorLogicTest.txt for full testing results)
+    v1.1:
+      writing serial input to lcd results in unintended final character (4 horizontal lines).
+      attempted to use push empty character to non-displayed location (48,0) however serial printing begins off screen.
+      entering scrolling-test-string results in very unexpected behaviour (G3 - E0 missing)
+      removed scrolling behaviour for now: revisit in v1.2
   TODO:
-    + Serial input to LCD output
+    + fix serial input scrolling behaviour
     + add potentiometer to dim backlight
     + add to RFID sketch to display chip UUID
   (lesser) TODO:
-    +
+    + find way to keep one line static while scrolling the other
   ----------------------------------------------------------------------------*/
 
 //Header files------------------------------------------------------------------
@@ -41,7 +46,6 @@
 
 
 //Definitions-------------------------------------------------------------------
-
 
 
 //Member Variables--------------------------------------------------------------
@@ -62,16 +66,17 @@ void setup() {
   lcd.init();
   lcd.backlight();
   //show visible cursor on screen
-  lcd.cursor();
+  // lcd.cursor();
 
   lcd.begin(16, 1);
   // Print a message to the LCD.
   lcd.backlight();
   lcd.setCursor(0, 0);
-  //test string to find limits of scrolling behaviour
-  lcd.print("A123456789B123456789C123456789D123456789E123456789F123456789G123456789H123456789I123456789");
-  lcd.autoscroll();    // Set diplay to scroll automatically
+  lcd.print("Serial input:");
 
+  //test string to find limits of scrolling behaviour
+  // lcd.print("A123456789B123456789C123456789D123456789E123456789F123456789G123456789H123456789I123456789");
+  //  lcd.autoscroll();    // Set diplay to scroll automatically
 
   Serial.println("Setup complete");
   Serial.println();
@@ -81,8 +86,6 @@ void setup() {
 }
 
 
-String message;
-
 
 //Loop--------------------------------------------------------------------------
 void loop() {
@@ -91,21 +94,44 @@ void loop() {
   //  newText(message);
   //  newText("this");
 
-  //  newText("sixteencharacter");
+  // newText("sixteencharacter");
   // newText("over sixteen characters");
+  // newText("still over sixteen characters");
+  // delay(2000);
 
-  //  newText("still over sixteen characters");
-  //  delay(2000);
+  //cursor behaviour testing
+  // lcd.setCursor(70, 0);
+  // lcd.print(" ");      // set characters
+  // delay(500);
 
+  //write to lcd from serial input testing:
+  //re-create string each loop (better to make global and set to empty each time?)
+  String inputString;
 
-  lcd.setCursor(70, 0);
-  lcd.print(" ");      // set characters
-  delay(500);
+  if (Serial.available()) {
+    Serial.println("debug: serial input");
+
+    //delay to allow entire message to arrive
+    delay(100);
+    //remove all previous display
+    lcd.clear();
+    //redisplay instruction line and move cursor to second line for input display
+    lcd.print("Serial input:");
+    lcd.setCursor(0, 1);
+
+    char inchar;
+    while (Serial.available() > 0) {
+      //input character from incoming serial
+      inchar = Serial.read();
+      //restrict input characters to text only (remove issues such as newline charater from attempting to print)
+      if ((' ' <= inchar) && (inchar <= '~'))
+        //build string to print
+        inputString += inchar;
+    }
+    lcd.print(inputString);
+  }
 
 }
-
-
-
 
 
 //Functions---------------------------------------------------------------------
