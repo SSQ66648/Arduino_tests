@@ -2,7 +2,7 @@
   PROJECT:      Module tests
   FILE:         lcd_1602A_test.ino
   AUTHOR:       SSQ66648
-  VERSION:      v1.1
+  VERSION:      v1.0.1
   DESCRIPTION:  Testing and experimentation of Arduino LCD module: 1602A
   ------------------------------------------------------------------------------
   NOTES:
@@ -27,7 +27,7 @@
           unexpected behaviour found: character 80 line 0 should loop back to character 0 line 0 (if 40,0 is equal to 0,1)
             BUT actually overwrites character 56 line 0? (ie F-6).
             (see file cursorLogicTest.txt for full testing results)
-    v1.1:
+    v1.0.1:
       writing serial input to lcd results in unintended final character (4 horizontal lines).
       attempted to use push empty character to non-displayed location (48,0) however serial printing begins off screen.
       entering scrolling-test-string results in very unexpected behaviour (G3 - E0 missing)
@@ -49,7 +49,7 @@
 
 
 //Member Variables--------------------------------------------------------------
-LiquidCrystal_I2C lcd(0x27, 20, 4); // set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x27, 16, 2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 
 //Setup-------------------------------------------------------------------------

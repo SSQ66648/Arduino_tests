@@ -2,7 +2,7 @@
   PROJECT:      Module tests
   FILE:         rfid_RC522_test.ino
   AUTHOR:       SSQ66648
-  VERSION:      v1.0
+  VERSION:      v1.0.1
   DESCRIPTION:  Testing and experimentation of Arduino RFID module: RC522
   ------------------------------------------------------------------------------
   NOTES:
@@ -20,6 +20,11 @@
         Average Block read time: 440      //note: this value does not represent the observed values: to be reviewed for v1.1
         Average Total read time: 615
       No problem at all if only UUID is required, however keeping chip within 3cm for around half a second may be difficult.
+    v1.0.1:
+      issues printing the UID byte[10] data: printing contents of [i] from for-loop results in 11(not 10) numbers with unknown relation to the 4-byte UID (8 hex numbers)?
+        hex numbers     : 3A 91 FF 3F
+        byte[i] numbers : 89213190178
+      able to identify card by UID hex numbers: unsure what block data is or why it is required if UID is so much faster?
   TODO:
     + manually check averages data as current version looks to be inaccurate (ie block reading only takes around 100ms, not 400.)
     + fix average calculations completely: values printed for each iteration are not changing
@@ -28,7 +33,7 @@
     + move variable to member variables (that clear on each use/failed use) -as far too many variables to pass to methods
     + create variable population/erasure methods
   (lesser) TODO:
-    +
+    + find more information regarding block data and its contents/purpose
   ----------------------------------------------------------------------------*/
 
 //Header files------------------------------------------------------------------
@@ -106,6 +111,23 @@ void loop() {
   // Show some details of the PICC (that is: the tag/card)
   Serial.print(F("Card UID:"));
   dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
+
+  //test: find if expected UID:
+  Serial.println();
+  if (mfrc522.uid.uidByte[0] == 0x59 &&
+      mfrc522.uid.uidByte[1] == 0xD5 &&
+      mfrc522.uid.uidByte[2] == 0xBE &&
+      mfrc522.uid.uidByte[3] == 0xB2) {
+    // confirm match:
+    Serial.println("UID MATCH");
+  } else {
+    Serial.println("NOT a match");
+  }
+
+
+
+
+
   Serial.println();
   Serial.print(F("PICC type: "));
   MFRC522::PICC_Type piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
