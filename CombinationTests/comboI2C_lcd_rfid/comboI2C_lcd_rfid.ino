@@ -14,8 +14,10 @@
       did not need to tackle I2C adresses as neither module required same pins.
       current version of comparing UID iteratively takes FAR too long: to be addressed in v2.0
       built in led not outputting high: will test if working on own sketch.
+    v1.1:
+      comparison delay was caused by forgotten delay() line. However may be able to use comparison such as memcmp() in future versions.
   TODO:
-    + Implement faster comparison of UIDs
+    +
   (lesser) TODO:
     + test LED_BUILTIN is working/fix
     + add LEDs for "access granted" or denied (not entirely relevant but more interesting and relays information at a glance)
@@ -107,7 +109,7 @@ void loop() {
       Serial.println();
 
       //leave on screen for a moment
-      delay(3000);
+      delay(1000);
 
       //check found UID against expected one:
       int i = 0;
@@ -122,7 +124,7 @@ void loop() {
         i++;
       }
 
-      delay(3000);
+      //      delay(1000);
       lcd.clear();
       lcd.setCursor(0, 0);
 
@@ -138,7 +140,7 @@ void loop() {
       mfrc522.PICC_HaltA();
 
       //leave on screen for a moment
-      delay(3000);
+      delay(1000);
 
       //reset
       lcd.clear();
